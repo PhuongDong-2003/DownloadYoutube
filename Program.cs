@@ -1,56 +1,122 @@
 ﻿using YoutubeExplode;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
+using YoutubeExplode.Common;
+using YoutubeExplode.Search;
 
 class Program
 {
+    
     static async Task Main(string[] args)
-    {
-        Console.Write("Nhập URL video từ YouTube: ");
-        string videoUrl = Console.ReadLine();
-        await DownloadVideoAsync(videoUrl);
-    }
-    static async Task DownloadVideoAsync(string videoUrl)
     {
         var youtube = new YoutubeClient();
 
-        var video = await youtube.Videos.GetAsync(videoUrl);
-        var videoId = video.Id;
+        while (true)
+        {
+            Console.Write("Nhập từ khóa tìm kiếm: ");
+            string searchQuery = Console.ReadLine();
 
-        var streamInfoSet = await youtube.Videos.Streams.GetManifestAsync(videoId);
+            // Thực hiện tìm kiếm
+            var searchResults = await youtube.Search.GetVideosAsync(searchQuery);
+
+            if (searchResults.Any())
+            {
+                Console.WriteLine("Danh sách video có liên quan:");
+
+              
+                for (int i = 0; i < searchResults.Count(); i++)
+                {
+                    Console.WriteLine($"{i + 1}. {searchResults[i].Title}");
+                }
+
+                Console.Write("Nhập số thứ tự video để tải về (hoặc 0 để kết thúc): ");
+                int selectedVideoIndex;
+
+                while (true)
+                {
+                    if (int.TryParse(Console.ReadLine(), out selectedVideoIndex) && selectedVideoIndex >= 0 && selectedVideoIndex <= searchResults.Count)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Lựa chọn không hợp lệ. Vui lòng nhập lại.");
+                    }
+                }
+
         
+                if (selectedVideoIndex == 0)
+                {
+                    break;
+                }
+                 var selectedVideo = searchResults[selectedVideoIndex - 1];
+           
+                await DownloadVideoAsync(youtube, selectedVideo);
+            }
+            else
+            {
+                Console.WriteLine("Không tìm thấy video nào. Vui lòng thử lại.");
+            }
+        }
 
-        var audioStreamInfo = streamInfoSet.GetAudioOnlyStreams().GetWithHighestBitrate();
+        Console.WriteLine("Chương trình đã kết thúc.");
+    }
 
-        
-        var videoStreamInfo = streamInfoSet
-            .GetVideoOnlyStreams()
-            .Where(s => s.Container == Container.Mp4)
-            .GetWithHighestVideoQuality();
 
-        var videoExt = videoStreamInfo.Container.Name;
-
-        var audioStream = await youtube.Videos.Streams.GetAsync(audioStreamInfo);
-        var videoStream = await youtube.Videos.Streams.GetAsync(videoStreamInfo);
-
-        var outputFilePath = Path.Combine(Directory.GetCurrentDirectory(), $"{video.Title}.{videoExt}");
-
-        Console.WriteLine($"Đang tải video và âm thanh...");
-
-    //    using (var fileStream = File.OpenWrite(outputFilePath))
+    // static async Task DownloadVideoAsync(string videoUrl)
     // {
-    //     await audioStream.CopyToAsync(fileStream);
-    //     await videoStream.CopyToAsync(fileStream);
+    //     var youtube = new YoutubeClient();
+    //     var video = await youtube.Videos.GetAsync(videoUrl);
+    //     var videoId = video.Id;
+
+    //     var streamInfoSet = await youtube.Videos.Streams.GetManifestAsync(videoId);
+    //     var audioStreamInfo = streamInfoSet.GetAudioOnlyStreams().GetWithHighestBitrate();
+
+    //     var videoStreamInfo = streamInfoSet
+    //         .GetVideoOnlyStreams()
+    //         .Where(s => s.Container == Container.Mp4)
+    //         .GetWithHighestVideoQuality();
+
+    //     var videoExt = videoStreamInfo.Container.Name;
+    //     var audioStream = await youtube.Videos.Streams.GetAsync(audioStreamInfo);
+    //     var videoStream = await youtube.Videos.Streams.GetAsync(videoStreamInfo);
+    //     var muxedStream = streamInfoSet.GetMuxedStreams().GetWithHighestVideoQuality();
+
+    //     await youtube.Videos.Streams.DownloadAsync(muxedStream, $"video.{muxedStream.Container}");
+    //     var outputFilePath = Path.Combine(Directory.GetCurrentDirectory(), $"{video.Title}.{videoExt}");
+
+    //     //  Console.WriteLine($"Đang tải video và âm thanh...");
+
+    //     //    using (var fileStream = File.OpenWrite(outputFilePath))
+    //     // {
+    //     //     await audioStream.CopyToAsync(fileStream);
+    //     //     await videoStream.CopyToAsync(fileStream);
+    //     // }
+
+    //     // Console.WriteLine($"Video và âm thanh đã được tải về: {outputFilePath}");
+
+    //     // Ghi thông tin về video vào một file text
+    //     // var infoFilePath = Path.Combine(Directory.GetCurrentDirectory(), $"{video.Title}_info.txt");
+    //     // WriteVideoInfoToFile(video, infoFilePath);
+    //     // Console.WriteLine($"Thông tin về video đã được lưu vào: {infoFilePath}");
+
     // }
-        await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, $"video.{videoStreamInfo.Container}");
-        await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, $"audio.{audioStreamInfo.Container}");
 
-        // Console.WriteLine($"Video và âm thanh đã được tải về: {outputFilePath}");
 
-        // Ghi thông tin về video vào một file text
-        // var infoFilePath = Path.Combine(Directory.GetCurrentDirectory(), $"{video.Title}_info.txt");
-        // WriteVideoInfoToFile(video, infoFilePath);
-        // Console.WriteLine($"Thông tin về video đã được lưu vào: {infoFilePath}");
+    static async Task DownloadVideoAsync(YoutubeClient youtube, VideoSearchResult video)
+    {
+        var videoId = video.Id;
+        var streamInfoSet = await youtube.Videos.Streams.GetManifestAsync(videoId);
+
+        var muxedStream = streamInfoSet.GetMuxedStreams().GetWithHighestVideoQuality();
+
+        var videoExt = muxedStream.Container.Name;
+
+
+        await youtube.Videos.Streams.DownloadAsync(muxedStream, $"{video.Title}.{muxedStream.Container}");
+        var outputFilePath = Path.Combine(Directory.GetCurrentDirectory(), $"{video.Title}.{muxedStream.Container}");
+
+        Console.WriteLine($"Video đã được tải về: {outputFilePath}");
     }
 
     // static void WriteVideoInfoToFile(Video video, string filePath)
@@ -65,7 +131,7 @@ class Program
 
     //         // Bạn có thể thêm các thông tin khác tùy theo nhu cầu
     //     }
-   // }
+    // }
 
 
 
