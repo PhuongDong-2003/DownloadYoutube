@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "sQkfdFe0dm/ttCMaEH8HAXXvlNyAIuqdbv3ZcqEK1/py5SLeyqhk/WBuYXR7w5XpZHum1QB2DVQIlrtDdCLuVw==",
+  "success": true,
+  "projectFilePath": "D:\\FPT_Telecom\\BT\\DownloadYoutube\\DownloadYoutube.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\PC\\.nuget\\packages\\anglesharp\\1.0.7\\anglesharp.1.0.7.nupkg.sha512",
+    "C:\\Users\\PC\\.nuget\\packages\\system.text.encoding.codepages\\7.0.0\\system.text.encoding.codepages.7.0.0.nupkg.sha512",
+    "C:\\Users\\PC\\.nuget\\packages\\youtubeexplode\\6.3.11\\youtubeexplode.6.3.11.nupkg.sha512"
+  ],
+  "logs": []
+}
